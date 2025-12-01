@@ -15,9 +15,7 @@ from account.services.auth_service import AuthService
 from core.decorators.logging_sql_queries import logging_sql_queries
 
 
-# ⭐ 変更: FormView を継承する ⭐
 class CustomLoginView(FormView):
-    # ⭐ 必須: form_class を指定する ⭐
     form_class = CustomAuthenticationForm
     template_name = "account/login.html"
     success_url = reverse_lazy("home")
@@ -28,7 +26,7 @@ class CustomLoginView(FormView):
         return self.success_url
 
     # 認証成功時に呼び出されるメソッドをオーバーライド
-    @logging_sql_queries
+    @logging_sql_queries(process_name="Authentication/Login")
     def form_valid(self, form: CustomAuthenticationForm) -> HttpResponseRedirect:
         """
         フォームのバリデーションが成功した後、AuthServiceを使用して認証を試みる。
