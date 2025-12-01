@@ -1,52 +1,79 @@
 {% load static %}
 {% comment %} Djangoは{% %}{{}}しか使用されない/alpineは{}だけを使用するため競合しない {% endcomment %}
 <!DOCTYPE html>
-<html lang="ja" x-data="themeData()" x-bind:data-theme="activeTheme">
+<html lang="ja" x-data="appData()" x-bind:data-theme="activeTheme">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>{% block title %}YourApp{% endblock %}</title>
+  <title>{% block title %}ダッシュボード - YourApp{% endblock %}</title>
 
-  {# 外部ライブラリの読み込み #}
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://cdn.jsdelivr.net/npm/daisyui@4.12.10/dist/full.css" rel="stylesheet"/>
   <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
-
-  {% block extra_head_css %}{% endblock %}
-
+  
   <style>
-    /* 共通のカスタムCSSがあればここに */
+    /* ツールチップ風 - サイドバー専用に調整 */
+    [x-tooltip] { position: relative; cursor: pointer; }
+    [x-tooltip]:hover::after {
+      content: attr(x-tooltip);
+      position: absolute;
+      left: 50%;
+      top: 0;
+      transform: translate(-50%, -100%); 
+      margin-top: -8px; 
+      background: #333; 
+      color: white; 
+      padding: 4px 8px; 
+      font-size: 0.8rem;
+      border-radius: 6px; 
+      white-space: nowrap;
+      z-index: 9999; 
+    }
+    .menu a[x-tooltip]:hover::after {
+      left: 100%;
+      top: 50%;
+      transform: translate(0, -50%);
+      margin-top: 0;
+      margin-left: 10px; /* アイコンから少し離す */
+    }
   </style>
 
+  {% block extra_head %}{% endblock %}
 </head>
-<body class="bg-base-200">
+<body class="bg-base-200 h-screen flex flex-col">
 
 <script>
-	// ⭐ Alpine.js テーマ管理ロジック (サイト全体で利用可能)
-	function themeData() {
-	return {
-		activeTheme: 'light',
-		availableThemes: ['light', 'dark', 'cupcake', 'bumblebee', 'emerald', 'corporate', 'synthwave', 'retro', 'cyberpunk', 'valentine', 'halloween', 'garden', 'forest', 'aqua', 'lofi', 'pastel', 'fantasy', 'wireframe', 'black', 'luxury', 'dracula', 'cmyk', 'autumn', 'business', 'acid', 'lemonade', 'night', 'coffee', 'winter', 'dim', 'nord', 'sunset'],
-		
-		// 初期テーマ設定 (オプション: ローカルストレージなどから読み込むロジックをここに追加)
-		init() {
-		// this.activeTheme = localStorage.getItem('theme') || 'light';
-		}
-	}
-	}
+function appData() {
+  return {
+    sidebarOpen: true,
+    drawerOpen: false,
+    activeTheme: 'business',
+    availableThemes: ['light', 'dark', 'cupcake', 'bumblebee', 'emerald', 'corporate', 'synthwave', 'retro', 'cyberpunk', 'valentine', 'halloween', 'garden', 'forest', 'aqua', 'lofi', 'pastel', 'fantasy', 'wireframe', 'black', 'luxury', 'dracula', 'cmyk', 'autumn', 'business', 'acid', 'lemonade', 'night', 'coffee', 'winter', 'dim', 'nord', 'sunset'],
+    activePath: 'dashboard', 
+    
+    // ダッシュボード専用データ (プロジェクトリストのサンプル)
+    projects: [
+      { id: 1, title: 'ポートフォリオサイト', language: 'React/Django', status: 'Public', likes: 45, views: 1200 },
+      { id: 2, title: '個人用タスク管理ツール', language: 'Alpine/Tailwind', status: 'Private', likes: 12, views: 300 },
+      { id: 3, title: 'レトロゲームシミュレータ', language: 'Vanilla JS', status: 'Public', likes: 88, views: 5500 },
+      { id: 4, title: '社内業務システム (非公開)', language: 'Python', status: 'Private', likes: 0, views: 10 },
+    ]
+  }
+}
 </script>
 
-    {% include "core/nav.html" %}
+{% include 'core/header.html' %}
 
-    <main class="py-12s">
-        {% block content %}
-        {# 各ページの内容がここに入る #}
-        {% endblock %}
-    </main>
+<div class="flex flex-1 h-full">
+  
+  {% include 'core/sidebar.html' %}
+  
+  <main class="flex-1 p-6 overflow-auto">
+    {% block content %}{% endblock content %}
+  </main>
+</div>
 
-    {% include "core/footer.html" %}
-
-{% block extra_js_scripts %}{% endblock %}
+{% include 'core/footer.html' %}
 
 </body>
 </html>

@@ -67,6 +67,7 @@ INSTALLED_APPS = [
     # "product",    # 作品・違反報告
     # "article",    # 記事・チュートリアル
     # "message",    # プライベートメッセージ
+    "home",  # ユーザー認証・プロフィール
 ]
 SITE_ID = 1
 MIDDLEWARE = [
