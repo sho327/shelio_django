@@ -1,0 +1,141 @@
+{% extends "core/auth/base.html" %}
+{% load static %}
+
+{% block title %}新規登録 - YourApp{% endblock %}
+
+{% block extra_head_css %}
+<style>
+	/* 中央配置のためのCSS */
+	.login-container {
+		display: flex;
+		flex-direction: column;
+		justify-content: center;
+		align-items: center;
+		min-height: 100vh;
+		padding: 1rem;
+	}
+</style>
+{% endblock %}
+
+{% block extra_js_scripts %}
+<script>
+	// Alpine.js フォームデータロジック (このページでのみ必要)
+	function signupData() {
+		return {
+		  // フォームデータ
+		  email: '',
+		  password: '',
+		  confirmPassword: '',
+		  
+		  // テーマ設定
+		  activeTheme: 'light',
+		  availableThemes: ['light', 'dark', 'cupcake', 'bumblebee', 'emerald', 'corporate', 'synthwave', 'retro', 'cyberpunk', 'valentine', 'halloween', 'garden', 'forest', 'aqua', 'lofi', 'pastel', 'fantasy', 'wireframe', 'black', 'luxury', 'dracula', 'cmyk', 'autumn', 'business', 'acid', 'lemonade', 'night', 'coffee', 'winter', 'dim', 'nord', 'sunset'],
+		  
+		  // パスワードが一致しているかチェックする計算プロパティ
+		  get passwordsMatch() {
+			// 両方のフィールドに値があり、かつ一致する場合にtrue
+			return this.password && this.password === this.confirmPassword;
+		  },
+		  
+		  // 登録処理（ダミー）
+		  submitSignup() {
+			if (!this.passwordsMatch) {
+			  alert('パスワードが一致していません。');
+			  return;
+			}
+			
+			console.log('新規登録試行:', this.email);
+			// ここにDjangoへのフォーム送信ロジックを実装します
+			alert('新規登録を試行します (コンソールを確認してください)');
+			// 成功したら window.location.href = '/dashboard/'; などで遷移
+		  }
+		}
+	}
+</script>
+{% endblock %}
+
+
+{% block content %}
+
+{# 新規登録ページ専用のレイアウトコンテナ #}
+<div class="login-container">
+	<div class="text-center mb-6">
+	  <h1 class="text-4xl font-bold text-primary">YourApp</h1>
+	  <p class="text-lg text-base-content/70 mt-2">新しいアカウントを作成</p>
+	</div>
+  
+	<div class="card w-full max-w-sm bg-base-100 shadow-2xl p-6">
+	  <form class="card-body p-0" @submit.prevent="submitSignup">
+		
+		<div class="form-control">
+		  <label class="label">
+			<span class="label-text">メールアドレス</span>
+		  </label>
+		  <input type="email" 
+				 placeholder="user@example.com" 
+				 class="input input-bordered w-full" 
+				 x-model="email" 
+				 required/>
+		</div>
+		
+		<div class="form-control">
+		  <label class="label">
+			<span class="label-text">パスワード</span>
+		  </label>
+		  <input type="password" 
+				 placeholder="••••••••" 
+				 class="input input-bordered w-full" 
+				 x-model="password" 
+				 minlength="8" 
+				 required/>
+		</div>
+  
+		<div class="form-control">
+		  <label class="label">
+			<span class="label-text">パスワード (確認)</span>
+			<span class="label-text-alt text-error" x-show="password && confirmPassword && !passwordsMatch">
+			  パスワードが一致しません
+			</span>
+		  </label>
+		  <input type="password" 
+				 placeholder="••••••••" 
+				 class="input input-bordered w-full" 
+				 :class="{'input-error': password && confirmPassword && !passwordsMatch}"
+				 x-model="confirmPassword" 
+				 required/>
+		</div>
+  
+		<div class="form-control mt-6">
+		  <button type="submit" 
+				  class="btn btn-primary" 
+				  :disabled="!passwordsMatch || !email || !password">
+			登録
+		  </button>
+		</div>
+		
+	  </form>
+	</div>
+	
+	<div class="mt-8 text-center w-full max-w-sm">
+	  <p class="text-sm text-base-content/70 mb-4">
+		既にアカウントをお持ちですか？ 
+		<a href="#" class="link link-primary">ログイン</a>
+	  </p>
+  
+	  {% comment %} <div class="dropdown dropdown-top dropdown-hover">
+		<div tabindex="0" role="button" class="btn btn-ghost btn-sm text-xs">
+		  テーマ: <span x-text="activeTheme"></span>
+		</div>
+		<ul tabindex="0" class="dropdown-content menu p-2 shadow bg-base-100 rounded-box w-52 max-h-60 overflow-y-auto">
+		  <template x-for="t in availableThemes" :key="t">
+			<li>
+			  <a @click="activeTheme = t" :class="activeTheme === t ? 'active' : ''" x-text="t"></a>
+			</li>
+		  </template>
+		</ul>
+	  </div> {% endcomment %}
+	</div>
+  
+</div>
+
+{% endblock %}

@@ -37,6 +37,7 @@ IS_DEBUG_LOG_OUTPUT: bool = env.bool("IS_DEBUG_LOG_OUTPUT", default=False)
 
 # セッション/クッキー設定(HTTPS設定を想定しない場合はFalseのまま)
 SESSION_COOKIE_SECURE: bool = env.bool("SESSION_COOKIE_SECURE", default=False)
+SESSION_COOKIE_AGE: int = 60
 CSRF_COOKIE_SECURE: bool = env.bool("CSRF_COOKIE_SECURE", default=False)
 # セキュリティ推奨設定
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")

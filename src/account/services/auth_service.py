@@ -3,25 +3,32 @@ import os
 from typing import Any, Dict
 
 from django.conf import settings
-from django.contrib.auth import authenticate, get_user_model
+from django.contrib.auth import get_user_model
+
+# 必要なDjango標準認証関数をインポート
+# import django.contrib.auth.login はビュー層で行うため、ここでは不要
+# セッション管理のためにSessionモデルをインポート（強制ログアウト用）
+from django.contrib.sessions.models import Session
 from django.core.mail import send_mail
 from django.db import transaction
 from django.utils import timezone
-from rest_framework_simplejwt.tokens import RefreshToken
 
 # Exception
 from account.exceptions import (
     AccountLockedException,
     AuthenticationFailedException,
     PasswordResetTokenInvalidException,
-    UserNotFoundException,
 )
 
 # account/必要なモデルとリポジトリをインポート
 from account.models.t_user_token import TokenTypes
 from account.repositories.m_user_repository import M_UserRepository
 from account.repositories.t_user_token_repository import T_UserTokenRepository
+from core.auth_scheme.user_auth_backend import UserAuthBackend
 from core.consts import APP_NAME
+
+# from rest_framework_simplejwt.tokens import RefreshToken
+
 
 User = get_user_model()
 
@@ -33,6 +40,7 @@ class AuthService:
     """
 
     def __init__(self):
+        self.user_auth_backend = UserAuthBackend()
         self.user_repo = M_UserRepository()
         self.token_repo = T_UserTokenRepository()
 
@@ -52,12 +60,27 @@ class AuthService:
         )
         send_mail(subject, message, settings.EMAIL_FROM, [user.email])
 
-    # ------------------------------------------------------------------
-    # ログイン処理 (JWT発行)
-    # ------------------------------------------------------------------
-    def login(self, email: str, password: str) -> Dict[str, str]:
+    def _force_logout_all_sessions(self, user: User):
         """
-        メールアドレスとパスワードでログインし、JWTトークンペアを返す。
+        指定されたユーザーに関連付けられている全ての既存のセッションを強制的に無効化する。
+        """
+        # Djangoのセッションストアから、現在アクティブなセッションを全て取得
+        sessions = Session.objects.filter(expire_date__gte=timezone.now())
+
+        # ユーザーIDに紐づくセッションキーを特定し、削除
+        for session in sessions:
+            session_data = session.get_decoded()
+            # セッションデータ内の認証ユーザーIDが一致するかチェック
+            if str(session_data.get("_auth_user_id")) == str(user.pk):
+                session.delete()
+
+    # ------------------------------------------------------------------
+    # ログイン処理
+    # ------------------------------------------------------------------
+    def login(self, email: str, password: str) -> User:
+        """
+        メールアドレスとパスワードで認証済みユーザーインスタンスを返す。
+        ビュー層でこのユーザーを使い、セッションを確立する必要がある。
         Args:
             email (str): メールアドレス
             password (str): パスワード
@@ -69,7 +92,9 @@ class AuthService:
         """
         # 1. Django標準のauthenticateを使って認証
         # (内部でcheck_passwordが行われる)
-        user = authenticate(email=email, password=password)
+        user = self.user_auth_backend.authenticate(
+            None, username=email, password=password
+        )
 
         if user is None:
             # ユーザーが存在しないか、パスワードが不一致
@@ -86,13 +111,7 @@ class AuthService:
         # またはリポジトリ経由で更新
         self.user_repo.update(user, last_login=timezone.now())
 
-        # 4. JWTトークンの生成 (SimpleJWT利用)
-        refresh = RefreshToken.for_user(user)
-
-        return {
-            "refresh": str(refresh),
-            "access": str(refresh.access_token),
-        }
+        return user  # 認証済みユーザーを返却
 
     # ------------------------------------------------------------------
     # パスワードリセット要求 (メール送信)
@@ -174,25 +193,9 @@ class AuthService:
         # 4. 使用済みトークンを無効化
         self.token_repo.soft_delete(token_instance)
 
-        # ------------------------------------------------------------------
         # 5. 【セキュリティ強化：全デバイスからの強制ログアウト（セッション切断）】
-        #    パスワード変更により、不正アクセス者による他のセッション利用を防ぐために行う。
-        #    ※ 現在は実装しないが、将来的な拡張ポイントとしてコメントで残す。
-        # ------------------------------------------------------------------
-
-        # ▼ 実現方法 1: リフレッシュトークンの削除 (推奨/ソフトコミット)
-        #    T_UserTokenにリフレッシュトークンを保存している場合、
-        #    そのユーザーIDに紐づく全てのリフレッシュトークンを削除する。
-        #    # self.token_repo.invalidate_tokens_by_user(user, TokenTypes.REFRESH)
-
-        # ▼ 実現方法 2: JWTアクセストークンのブラックリスト化 (即時切断/負荷高)
-        #    SimpleJWTのブラックリスト機能（通常Redisなどのキャッシュを使用）を利用し、
-        #    ユーザーの全JWTを強制的に失効させる。
-
-        # ▼ 実現方法 3: 伝統的なDjangoセッションの削除
-        #    django.contrib.sessions の機能を利用し、ユーザーに紐づくDB上の全セッションを削除する。
-        #    # from django.contrib.sessions.models import Session
-        #    # Session.objects.filter(expire_date__gte=timezone.now(), session_key__in=Session.objects.filter(session_key=user.pk).values_list('session_key', flat=True)).delete()
-        # ------------------------------------------------------------------
+        # セッション認証に基づき、全セッションを削除する
+        # SessionモデルにはUserへの直接的なリレーションがないため、セッションデータを解析して削除
+        self._force_logout_all_sessions(user)
 
         return user

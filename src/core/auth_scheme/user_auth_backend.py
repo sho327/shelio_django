@@ -21,10 +21,8 @@ class UserAuthBackend(BaseBackend):
     # ModelBackendの user_can_authenticate はBaseBackendにはないので、手動で実装するか
     # または、そのロジックを認証メソッド内に統合する (今回は統合)
 
-    @logging_sql_queries
     # 識別子は常に 'username' として渡されるため、そのまま受け取る
     def authenticate(self, request, username=None, password=None, **kwargs):
-
         # 1. ログイン試行に使用された識別子 (メールアドレス) を取得
         # identifierは adminサイトから渡される 'username' を使用
         identifier = username
@@ -78,7 +76,6 @@ class UserAuthBackend(BaseBackend):
                 return None
 
     # 必須: 認証成功後にユーザーインスタンスを取得するためのメソッド
-    @logging_sql_queries
     def get_user(self, user_id):
         try:
             return UserModel.objects.get(pk=user_id)
