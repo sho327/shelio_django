@@ -45,8 +45,8 @@
           <a x-tooltip="新規投稿"
              class="flex items-center gap-2"
              :class="{
-                 'bg-primary/10 text-primary font-bold focus:bg-primary/10 active:bg-primary/10 hover:bg-primary/20': activePath === 'post', 
-                 'text-base-content hover:bg-base-200': activePath !== 'post',
+                 '!bg-primary/10 !text-primary font-bold focus:!bg-primary/10 active:!bg-primary/10 hover:bg-primary/20': activePath === 'post', 
+                 'text-base-content hover:bg-base-200 active:!bg-base-300': activePath !== 'post',
                  'justify-center p-0': !sidebarOpen, 
                  'py-3 px-4': sidebarOpen 
              }"
@@ -100,7 +100,7 @@
              class="flex items-center gap-2"
              :class="{
                  'bg-primary/10 text-primary font-bold focus:bg-primary/10 active:bg-primary/10 hover:bg-primary/20': activePath === 'settings', 
-                 'text-base-content hover:bg-base-200': activePath !== 'settings',
+                 'text-base-content focus:bg-primary/10 hover:bg-primary/10 active:bg-primary/10': activePath !== 'settings',
                  'justify-center p-0': !sidebarOpen, 
                  'py-3 px-4': sidebarOpen 
              }"
