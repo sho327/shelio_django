@@ -1,8 +1,8 @@
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.views.generic import TemplateView
+from core.decorators.logging_sql_queries import logging_sql_queries
 
 process_name = "ProfileView"
-
 
 class ProfileView(LoginRequiredMixin, TemplateView):
     """
@@ -11,6 +11,7 @@ class ProfileView(LoginRequiredMixin, TemplateView):
 
     template_name = "account/profile.html"
 
+    @logging_sql_queries(process_name=process_name)
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         user = self.request.user

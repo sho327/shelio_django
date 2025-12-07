@@ -10,13 +10,16 @@ from account.exceptions import (
 from account.services.auth_service import AuthService
 from core.consts import LOG_METHOD
 from core.utils.log_helpers import log_output_by_msg_id
+from core.decorators.logging_sql_queries import logging_sql_queries
 
+process_name = "ActivateUserView"
 
 class ActivateUserView(View):
     """
     メールに記載されたトークンを使ってユーザーアカウントを有効化する。
     """
 
+    @logging_sql_queries(process_name=process_name)
     def get(self, request, token_value):
         auth_service = AuthService()
 

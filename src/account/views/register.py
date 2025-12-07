@@ -12,7 +12,6 @@ from core.utils.log_helpers import log_output_by_msg_id
 
 process_name = "RegisterView"
 
-
 class RegisterView(FormView):
     form_class = SignupForm
     template_name = "account/register.html"

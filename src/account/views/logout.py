@@ -6,7 +6,9 @@ from django.views import View
 
 from core.consts import LOG_METHOD
 from core.utils.log_helpers import log_output_by_msg_id
+from core.decorators.logging_sql_queries import logging_sql_queries
 
+process_name = "LogoutView"
 
 class LogoutView(View):
     """
@@ -17,6 +19,7 @@ class LogoutView(View):
     # reverse_lazy を使うことで、URLがまだ読み込まれていなくても安全に参照できます
     redirect_url = reverse_lazy("account:login")
 
+    @logging_sql_queries(process_name=process_name)
     def get(self, request):
         user_id = None
         if request.user.is_authenticated:

@@ -9,7 +9,9 @@ from account.services.auth_service import AuthService
 from core.consts import LOG_METHOD
 from core.exceptions import IntegrityError
 from core.utils.log_helpers import log_output_by_msg_id
+from core.decorators.logging_sql_queries import logging_sql_queries
 
+process_name = "PasswordResetConfirmView"
 
 # パスワードリセット確認＆実行ビュー(トークン検証とパスワード設定)
 class PasswordResetConfirmView(FormView):
@@ -23,12 +25,14 @@ class PasswordResetConfirmView(FormView):
         self.token_value = kwargs.get("token_value")
         return super().dispatch(request, *args, **kwargs)
 
+    @logging_sql_queries(process_name=process_name)
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         # テンプレートにトークンを渡す（例: フォームのhiddenフィールドなど）
         context["token_value"] = self.token_value
         return context
 
+    @logging_sql_queries(process_name=process_name)
     def form_valid(self, form):
         new_password = form.cleaned_data["new_password1"]
         auth_service = AuthService()

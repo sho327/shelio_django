@@ -19,7 +19,6 @@ from core.utils.log_helpers import log_output_by_msg_id
 
 process_name = "LoginView"
 
-
 class LoginView(FormView):
     form_class = AuthenticationForm
     template_name = "account/login.html"

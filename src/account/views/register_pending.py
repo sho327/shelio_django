@@ -1,5 +1,6 @@
 from django.views.generic import TemplateView
 
+process_name = "RegisterPendingView"
 
 class RegisterPendingView(TemplateView):
     """

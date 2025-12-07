@@ -12,7 +12,6 @@ from core.utils.log_helpers import log_output_by_msg_id
 
 process_name = "ProfileEditView"
 
-
 class ProfileEditView(LoginRequiredMixin, FormView):
     """
     プロフィール編集画面
@@ -77,6 +76,7 @@ class ProfileEditView(LoginRequiredMixin, FormView):
         form.fields['theme'].choices = theme_choices
         return form
 
+    @logging_sql_queries(process_name=process_name)
     def form_valid(self, form):
         data = form.cleaned_data
         icon_file = self.request.FILES.get("icon", None)

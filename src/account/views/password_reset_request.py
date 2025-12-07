@@ -10,7 +10,9 @@ from account.services.auth_service import AuthService
 from core.consts import LOG_METHOD
 from core.exceptions import ExternalServiceError, IntegrityError
 from core.utils.log_helpers import log_output_by_msg_id
+from core.decorators.logging_sql_queries import logging_sql_queries
 
+process_name = "PasswordResetRequestView"
 
 # パスワードリセット要求ビュー (メールアドレス入力)
 class PasswordResetRequestView(FormView):
@@ -18,6 +20,7 @@ class PasswordResetRequestView(FormView):
     form_class = PasswordResetRequestForm
     success_url = reverse_lazy("account:password_reset_pending")
 
+    @logging_sql_queries(process_name=process_name)
     def form_valid(self, form):
         email = form.cleaned_data["email"]
         auth_service = AuthService()

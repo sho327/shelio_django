@@ -9,7 +9,9 @@ from account.services.user_service import UserService
 from core.consts import LOG_METHOD
 from core.exceptions import ExternalServiceError, IntegrityError
 from core.utils.log_helpers import log_output_by_msg_id
+from core.decorators.logging_sql_queries import logging_sql_queries
 
+process_name = "InitialSetupView"
 
 class InitialSetupView(LoginRequiredMixin, FormView):
     template_name = "account/initial_setup.html"
@@ -36,7 +38,6 @@ class InitialSetupView(LoginRequiredMixin, FormView):
                 profile = user.user_profile
                 initial["display_name"] = profile.display_name
                 initial["is_public"] = profile.is_public
-                # 🚨 修正: フォームのフィールド名に合わせる
                 initial["is_email_notify_enabled"] = profile.is_email_notify_enabled
             except Exception:
                 pass
@@ -44,12 +45,14 @@ class InitialSetupView(LoginRequiredMixin, FormView):
         return initial
 
     # 3. フォームのインスタンス化をオーバーライド (userインスタンスを渡すため)
+    @logging_sql_queries(process_name=process_name)
     def get_form(self, form_class=None):
         form_class = form_class or self.get_form_class()
         # フォームに user インスタンスを渡す
         return form_class(user=self.request.user, **self.get_form_kwargs())
 
     # 4. POST処理
+    @logging_sql_queries(process_name=process_name)
     def form_valid(self, form):
         data = form.cleaned_data
         icon_file = self.request.FILES.get("icon", None)
