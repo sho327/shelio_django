@@ -40,7 +40,7 @@
 
   {% block extra_head %}{% endblock %}
 </head>
-<body class="bg-base-200 h-screen flex flex-col">
+<body class="bg-base-200 h-screen flex flex-col overflow-hidden">
 
 <script>
 function appData() {
@@ -65,7 +65,7 @@ function appData() {
 
 {% include 'core/header.html' %}
 
-<div class="flex flex-1 h-full">
+<div class="flex flex-1 overflow-hidden">
   
   {% include 'core/sidebar.html' %}
   
