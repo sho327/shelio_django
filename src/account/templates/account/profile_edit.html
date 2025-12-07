@@ -7,8 +7,8 @@
 
 <div class="container mx-auto max-w-4xl">
   <div class="mb-6">
-    <h1 class="text-3xl font-bold">プロフィール編集</h1>
-    <a href="{% url 'account:profile' %}" class="link link-primary mt-2 inline-block">← プロフィールに戻る</a>
+    <h1 class="text-2xl font-bold">プロフィール編集</h1>
+    <a href="{% url 'account:profile' %}" class="link link-primary mt-2 inline-block text-sm">← プロフィールに戻る</a>
   </div>
 
   <div class="card bg-base-100 shadow-xl">
@@ -32,7 +32,7 @@
         {% endif %}
 
         {# 基本情報セクション #}
-        <h2 class="text-xl font-bold mb-4">基本情報</h2>
+        <h2 class="text-xl font-semibold mb-3">基本情報</h2>
         
         {# 表示名 #}
         {% with field=form.display_name %}
@@ -95,7 +95,7 @@
         <div class="divider"></div>
 
         {# 詳細情報セクション #}
-        <h2 class="text-xl font-bold mb-4">詳細情報</h2>
+        <h2 class="text-xl font-semibold mb-3">詳細情報</h2>
 
         {# 自己紹介 #}
         {% with field=form.bio %}
@@ -214,7 +214,7 @@
         <div class="divider"></div>
 
         {# リンク情報セクション #}
-        <h2 class="text-xl font-bold mb-4">リンク情報</h2>
+        <h2 class="text-xl font-semibold mb-3">リンク情報</h2>
 
         {# GitHubリンク #}
         {% with field=form.github_link %}
@@ -306,7 +306,7 @@
         <div class="divider"></div>
 
         {# 設定セクション #}
-        <h2 class="text-xl font-bold mb-4">設定</h2>
+        <h2 class="text-xl font-semibold mb-3">設定</h2>
 
         {# プロフィール公開 #}
         {% with field=form.is_public %}

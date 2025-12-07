@@ -12,6 +12,16 @@ def global_settings(request):
     is_authenticated = user.is_authenticated
     # settings.pyで定義した TOKEN_EXPIRY_SECONDS を参照する
     token_expiry = getattr(settings, "TOKEN_EXPIRY_SECONDS", {})
+    
+    # プロフィール情報を安全に取得
+    user_profile = None
+    if is_authenticated:
+        try:
+            user_profile = user.user_profile
+        except Exception:
+            # プロフィールが存在しない場合はNone
+            user_profile = None
+    
     # ユーザーがログインしているかどうかにかかわらず、全テンプレートで参照可能
     return {
         "SITE_NAME": settings.APP_NAME,
@@ -23,5 +33,7 @@ def global_settings(request):
         "APP_DEBUG_MODE": settings.DEBUG,
         # ユーザー権限 (管理者か否か)
         "IS_ADMIN": is_authenticated and user.is_superuser,
+        # ユーザープロフィール情報（存在しない場合はNone）
+        "USER_PROFILE": user_profile,
         # IS_AUTHENTICATEDはテンプレートからも簡単に確認可能(テンプレート変数を使っても冗長にならないのでここに含めない)
     }

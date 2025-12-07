@@ -23,9 +23,29 @@
 	  <div class="px-4 relative" x-data="{ open: false }">
 		<button @click="open = !open" class="btn btn-ghost rounded-lg flex items-center gap-2">
 		  <div class="w-8 h-8 rounded-full overflow-hidden">
-			<img src="https://placehold.jp/40x40.png" alt="User"/>
+			{% if user.is_authenticated and USER_PROFILE %}
+			  {% if USER_PROFILE.icon %}
+				<img src="{{ USER_PROFILE.icon.url }}" alt="プロフィールアイコン"/>
+			  {% else %}
+				<div class="w-8 h-8 bg-neutral text-neutral-content rounded-full flex items-center justify-center text-xs font-semibold">
+				  {{ USER_PROFILE.display_name|first|upper|default:user.email|first|upper }}
+				</div>
+			  {% endif %}
+			{% else %}
+			  <img src="https://placehold.jp/40x40.png" alt="User"/>
+			{% endif %}
 		  </div>
-		  <span class="hidden md:inline">Shogo Kato</span>
+		  <span class="hidden md:inline">
+			{% if user.is_authenticated %}
+			  {% if USER_PROFILE and USER_PROFILE.display_name %}
+				{{ USER_PROFILE.display_name }}
+			  {% else %}
+				{{ user.email }}
+			  {% endif %}
+			{% else %}
+			  ゲスト
+			{% endif %}
+		  </span>
 		</button>
 		<ul x-show="open" @click.outside="open=false" class="absolute top-10 right-0 mt-1 dropdown-content menu p-2 shadow bg-base-100 rounded-box w-52 z-50">
 		  <li><a href="{% url 'account:profile' %}">プロフィール</a></li>
