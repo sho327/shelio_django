@@ -1,3 +1,4 @@
+import os
 import random
 import string
 from typing import Any, Dict, Optional, Union
@@ -46,9 +47,24 @@ def set_int_format(pInt: Optional[Union[int, str]]) -> Optional[int]:
 def generate_random_string(length: int = 20) -> str:
     """
     指定された長さのランダムな英数字文字列（一時パスワード、トークンなど）を生成する。
+    注意: セキュリティが重要な用途（トークンなど）には generate_secure_token を使用してください。
     """
     characters = string.ascii_letters + string.digits
     return "".join(random.choice(characters) for i in range(length))
+
+
+def generate_secure_token(byte_length: int = 32) -> str:
+    """
+    暗号学的に安全なランダムトークンを生成する（16進数文字列として返す）。
+    トークン生成など、セキュリティが重要な用途に使用する。
+
+    Args:
+        byte_length: 生成するバイト数（デフォルト: 32バイト = 64文字の16進数）
+
+    Returns:
+        16進数文字列（例: "a1b2c3d4..."）
+    """
+    return os.urandom(byte_length).hex()
 
 
 def clean_input_data(data: Dict[str, Any]) -> Dict[str, Any]:

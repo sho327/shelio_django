@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.db import models
 from simple_history.models import HistoricalRecords
 
@@ -21,7 +22,7 @@ class M_UserProfile(BaseModel):
         # 逆参照名を定義(例: m_user_instance.user_profile/通常参照はm_user_profile_instance.m_user(_id)で取得可能)
         related_name="user_profile",
     )
-    # 表示名
+    # --- 1. 基本情報 ---
     display_name = models.CharField(
         db_column="display_name",
         verbose_name="表示名",
@@ -30,36 +31,32 @@ class M_UserProfile(BaseModel):
         null=True,
         blank=True,
     )
-    # ユーザーアイコン
-    # ファイルパスを保存し、ストレージにファイルを配置
     icon = models.ImageField(
         db_column="icon",
         verbose_name="ユーザーアイコン",
+        db_comment="ユーザーアイコン",
         upload_to="user_icons/",  # 開発時は MEDIA_ROOT/user_icons に保存される
+        max_length=512,  # ImageFieldはパスを格納するため長めに
         null=True,
         blank=True,
     )
 
-    # 自己紹介
+    # --- 2. 詳細情報 ---
     bio = models.TextField(
         db_column="bio",
-        verbose_name="自己紹介",
+        verbose_name="自己紹介文",
         db_comment="自己紹介文",
-        max_length=500,  # 例: 500文字制限
+        max_length=500,
         null=True,
         blank=True,
     )
-
-    # 経歴 (シンプルな文字列として保持。より複雑な場合は別テーブル化推奨)
     career_history = models.TextField(
         db_column="career_history",
         verbose_name="経歴",
-        db_comment="職務経歴や学歴など",
+        db_comment="経歴（職務経歴や学歴など）",
         null=True,
         blank=True,
     )
-
-    # 所在地
     location = models.CharField(
         db_column="location",
         verbose_name="所在地",
@@ -68,91 +65,90 @@ class M_UserProfile(BaseModel):
         null=True,
         blank=True,
     )
-
-    # SNS/ポートフォリオURL
-    github_url = models.URLField(
-        db_column="github_url",
-        verbose_name="GitHub URL",
-        db_comment="GitHubプロフィールリンク",
-        max_length=255,
-        null=True,
-        blank=True,
-    )
-    x_url = models.URLField(
-        db_column="x_url",
-        verbose_name="X (旧Twitter) URL",
-        db_comment="X (旧Twitter) プロフィールリンク",
-        max_length=255,
-        null=True,
-        blank=True,
-    )
-    portfolio_blog_url = models.URLField(
-        db_column="portfolio_blog_url",
-        verbose_name="ポートフォリオ/ブログ URL",
-        db_comment="個人ポートフォリオまたはブログのリンク",
-        max_length=255,
-        null=True,
-        blank=True,
-    )
-
-    # 得意な技術タグ
     skill_tags_raw = models.CharField(
         db_column="skill_tags_raw",
-        verbose_name="得意な技術タグ（RAW）",
-        db_comment="得意な技術タグ（カンマ区切りなどの生データ）",
+        verbose_name="技術タグ（RAW）",
+        db_comment="技術タグ（カンマ区切りなどの生データ）",
         max_length=500,
         null=True,
         blank=True,
     )
 
-    # プロフィール公開設定
+    # --- 3. リンク情報 ---
+    github_link = models.URLField(
+        db_column="github_link",
+        verbose_name="GitHubリンク",
+        db_comment="GitHubプロフィールリンク",
+        max_length=255,
+        null=True,
+        blank=True,
+    )
+    x_link = models.URLField(
+        db_column="x_link",
+        verbose_name="X (旧Twitter) リンク",
+        db_comment="X (旧Twitter) プロフィールリンク",
+        max_length=255,
+        null=True,
+        blank=True,
+    )
+    portfolio_blog_link = models.URLField(
+        db_column="portfolio_blog_link",
+        verbose_name="ポートフォリオ/ブログリンク",
+        db_comment="ポートフォリオまたはブログのリンク",
+        max_length=255,
+        null=True,
+        blank=True,
+    )
+
+    # --- 4. フラグと設定 ---
     is_public = models.BooleanField(
         db_column="is_public",
         verbose_name="プロフィール公開フラグ",
-        db_comment="プロフィールを一般公開するかどうか",
+        db_comment="プロフィール公開フラグ",
         db_default=True,
         default=True,
     )
 
-    # メール通知設定
-    # すべての通知を一括で受け取るかどうかのフラグ
-    is_email_notification_enabled = models.BooleanField(
-        db_column="is_email_notification_enabled",
-        verbose_name="メール通知一括ON/OFF",
-        db_comment="すべてのメール通知をONにするか",
+    # メール通知設定 (notifyで統一)
+    is_email_notify_enabled = models.BooleanField(
+        db_column="is_email_notify_enabled",
+        verbose_name="メール通知一括設定フラグ",
+        db_comment="メール通知一括設定フラグ",
         db_default=True,
         default=True,
     )
     # 個別の通知設定
-    notify_like = models.BooleanField(
-        db_column="notify_like",
-        verbose_name="通知:作品いいね",
-        db_comment="作品に「いいね」がついた時のメール通知",
+    is_notify_like = models.BooleanField(
+        db_column="is_notify_like",
+        verbose_name="通知:いいね設定フラグ",
+        db_comment="通知:作品に「いいね」がついた時のメール設定フラグ",
         db_default=True,
         default=True,
     )
-    notify_comment = models.BooleanField(
-        db_column="notify_comment",
-        verbose_name="通知:コメント/返信",
-        db_comment="コメントや返信が来た時のメール通知",
+    is_notify_comment = models.BooleanField(
+        db_column="is_notify_comment",
+        verbose_name="通知:コメント設定フラグ",
+        db_comment="通知:コメントや返信が来た時のメール設定フラグ",
         db_default=True,
         default=True,
     )
-    notify_follow = models.BooleanField(
-        db_column="notify_follow",
-        verbose_name="通知:フォロー",
-        db_comment="誰かにフォローされた時のメール通知",
+    is_notify_follow = models.BooleanField(
+        db_column="is_notify_follow",
+        verbose_name="通知:フォロー設定フラグ",
+        db_comment="通知:誰かにフォローされた時のメール設定フラグ",
         db_default=True,
         default=True,
     )
     # --- 各テーブル共通(AbstractBaseModelは列順が変わってしまうので使用しない) ---
-    created_by = models.DecimalField(
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,  # M_Userモデルを参照
         db_column="created_by",
-        verbose_name="作成者/id",
-        db_comment="作成者/id",
-        decimal_places=0,
-        max_digits=20,
+        verbose_name="作成者",
+        db_comment="作成を行ったユーザー",
+        related_name="%(app_label)s_%(class)s_created",  # 関連名の一意性を確保
+        on_delete=models.SET_NULL,  # ユーザーが消えてもデータは残す
         null=True,
+        blank=True,
     )
     created_at = models.DateTimeField(
         db_column="created_at",
@@ -160,6 +156,7 @@ class M_UserProfile(BaseModel):
         db_comment="作成日時",
         null=True,
         blank=True,
+        auto_now_add=True,
     )
     created_method = models.CharField(
         db_column="created_method",
@@ -169,13 +166,15 @@ class M_UserProfile(BaseModel):
         null=True,
         blank=True,
     )
-    updated_by = models.DecimalField(
+    updated_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
         db_column="updated_by",
-        verbose_name="更新者/id",
-        db_comment="更新者/id",
-        decimal_places=0,
-        max_digits=20,
+        verbose_name="更新者",
+        db_comment="更新を行ったユーザー",
+        related_name="%(app_label)s_%(class)s_updated",
+        on_delete=models.SET_NULL,
         null=True,
+        blank=True,
     )
     updated_at = models.DateTimeField(
         db_column="updated_at",
@@ -183,6 +182,7 @@ class M_UserProfile(BaseModel):
         db_comment="更新日時",
         null=True,
         blank=True,
+        auto_now=True,
     )
     updated_method = models.CharField(
         db_column="updated_method",

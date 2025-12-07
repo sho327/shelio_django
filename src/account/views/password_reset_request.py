@@ -7,7 +7,9 @@ from django.views.generic import FormView
 
 from account.forms.password_reset_request import PasswordResetRequestForm
 from account.services.auth_service import AuthService
+from core.consts import LOG_METHOD
 from core.exceptions import ExternalServiceError, IntegrityError
+from core.utils.log_helpers import log_output_by_msg_id
 
 
 # パスワードリセット要求ビュー (メールアドレス入力)
@@ -29,37 +31,40 @@ class PasswordResetRequestView(FormView):
 
             return super().form_valid(form)
 
-        except IntegrityError:
-            # DB関連のシステムエラー
-            # messages.error(
-            #     self.request,
-            #     "システムエラーが発生しました。時間をおいて再度お試しください。",
-            # )
-            form.add_error(
-                None,
-                "システムエラーが発生しました。時間をおいて再度お試しください。",
+        except IntegrityError as e:
+            # ログ出力: データベース整合性エラーを記録
+            log_output_by_msg_id(
+                log_id="MSGE501",
+                params=[email, e.message_id, str(e.details)],
+                logger_name=LOG_METHOD.APPLICATION.value,
+                # exc_info=Trueを削除（予測可能なエラーのため）
             )
+            # 例外クラスで定義されたメッセージを使用
+            form.add_error(None, e.message)
             return redirect(
                 reverse("account:login")
             )  # ユーザーを安全な場所へリダイレクト
 
-        except ExternalServiceError:
-            # メール送信に失敗した場合のエラー
-            # messages.error(
-            #     self.request,
-            #     "メール送信サービスに問題が発生しました。時間をおいて再度お試しください。",
-            # )
-            form.add_error(
-                None,
-                "メール送信サービスに問題が発生しました。時間をおいて再度お試しください。",
+        except ExternalServiceError as e:
+            # ログ出力: 外部サービスエラーを記録
+            log_output_by_msg_id(
+                log_id="MSGE502",
+                params=[email, e.message_id],
+                logger_name=LOG_METHOD.APPLICATION.value,
             )
+            # 例外クラスで定義されたメッセージを使用
+            form.add_error(None, e.message)
             return redirect(reverse("account:login"))
 
-        except Exception:
-            # 予期せぬ全てのエラー
-            # messages.error(self.request, "予期せぬエラーが発生しました。")
-            form.add_error(
-                None,
-                "予期せぬエラーが発生しました。",
+        except Exception as e:
+            # ログ出力: 予期せぬエラーを記録（スタックトレースを含む）
+            error_detail = f"パスワードリセット要求処理中にエラーが発生しました。メールアドレス: {email} エラー: {str(e)}"
+            log_output_by_msg_id(
+                log_id="MSGE002",
+                params=[error_detail],
+                logger_name=LOG_METHOD.APPLICATION.value,
+                exc_info=True,  # 予測不可能なエラーのためスタックトレースを含める
             )
+            # 予期せぬ全てのエラー
+            form.add_error(None, "予期せぬエラーが発生しました。")
             return redirect(reverse("account:login"))

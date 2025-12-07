@@ -1,76 +1,61 @@
 from django import forms
 from django.contrib.auth import get_user_model
+from django.core.exceptions import ValidationError
 
-from account.models import M_UserProfile
+# from account.models import M_UserProfile # ユニークチェックなしのためインポートは不要
 
 User = get_user_model()
 
 
-class InitialSetupForm(forms.ModelForm):
-    # Userモデルのフィールド
-    # username（Userモデルに存在する場合）やemailなどを追加
-    # 例: username = forms.CharField(max_length=150, required=True, label="ユーザー名")
-    # ここでは例として display_name をM_UserProfileから取得し、Userフォームで表示
+class InitialSetupForm(forms.Form):
+    """
+    初回設定時に必須/推奨される項目のみを扱うフォーム。
+    """
 
-    # M_UserProfileのフィールド
+    # 必須項目
     display_name = forms.CharField(
-        max_length=100,
-        required=False,  # 初期設定で必須にしない場合はFalse
         label="表示名",
-        help_text="他のユーザーに表示される名前です。",
+        max_length=64,
+        required=True,
+        help_text="コミュニティ内であなたを識別するために使用されます。必須です。",
     )
 
-    # 必要に応じて、Userモデルの他のフィールドをここに追加
-    # 例: first_name = forms.CharField(max_length=30, required=False, label="名")
-    # 例: last_name = forms.CharField(max_length=30, required=False, label="姓")
+    # 推奨項目 (オプションとして扱う)
+    icon = forms.ImageField(
+        label="ユーザーアイコン",
+        required=False,
+        help_text="プロフィールアイコン画像をアップロードしてください。",
+    )
 
-    class Meta:
-        model = User
-        # Userモデルのどのフィールドをフォームで扱うか指定
-        # 今回は is_first_login フラグをUserモデルに持たせているため、
-        # Userモデル自体からは更新不要なフィールドのみを指定（例：password以外の共通フィールド）
-        # ここではUserモデルからの直接更新は行わない想定でfieldsを空にするか、必要なものだけ
-        fields = (
-            []
-        )  # Userモデルのフィールドはビューで直接更新するか、別のフォームで扱う
+    is_public = forms.BooleanField(
+        label="プロフィールを一般公開する",
+        required=False,
+        initial=True,
+        help_text="チェックを外すと、プロフィールはログインユーザーにのみ表示されます。",
+    )
 
+    # 🚨 修正箇所: モデル名 (is_email_notify_enabled) に合わせる 🚨
+    is_email_notify_enabled = forms.BooleanField(
+        label="メール通知を一括で受け取る",
+        required=False,
+        initial=True,
+        help_text="すべてのメール通知の有効/無効を一括で設定します。",
+    )
+
+    # -------------------------------------------------------------
+    # 初期値設定用のフック (ビューで利用)
+    # -------------------------------------------------------------
     def __init__(self, *args, **kwargs):
-        self.user = kwargs.pop("user", None)  # ビューからuserオブジェクトを受け取る
+        self.user = kwargs.pop("user", None)
         super().__init__(*args, **kwargs)
 
-        if self.user:
-            # 既存のプロフィールデータをフォームに初期値として設定
-            try:
-                # user.user_profile は OneToOneField の逆参照
-                profile = self.user.user_profile
-                self.fields["display_name"].initial = profile.display_name
-            except M_UserProfile.DoesNotExist:
-                # プロフィールが存在しない場合（極めて稀だが念のため）
-                pass
-
+    # -------------------------------------------------------------
+    # クリーンメソッド
+    # -------------------------------------------------------------
     def clean_display_name(self):
         display_name = self.cleaned_data.get("display_name")
+
         if not display_name:
-            # display_name が空の場合でも許容する
-            # あるいは、ここで自動生成ロジックを実装することも可能
-            # 例: return self.user.email.split('@')[0]
-            pass
+            raise ValidationError("表示名は必須です。", code="required")
+
         return display_name
-
-    def save(self, commit=True):
-        # Userモデルのフィールドを保存する場合はここに追加
-        # user = super().save(commit=False) # Userモデルの保存はここでは行わない
-
-        # M_UserProfileの更新
-        try:
-            profile = self.user.user_profile
-        except M_UserProfile.DoesNotExist:
-            # プロフィールが存在しない場合は新規作成（通常はシグナルで作成済み）
-            profile = M_UserProfile(m_user=self.user)
-
-        profile.display_name = self.cleaned_data["display_name"]
-        if commit:
-            profile.save()
-
-        # Userモデルの is_first_login フラグはビューで更新するため、ここでは扱わない
-        return self.user  # userオブジェクトを返す

@@ -12,8 +12,10 @@ from account.forms.login import AuthenticationForm
 
 # AuthServiceとカスタム例外をインポート
 from account.services.auth_service import AuthService
+from core.consts import LOG_METHOD
 from core.decorators.logging_sql_queries import logging_sql_queries
 from core.exceptions import IntegrityError
+from core.utils.log_helpers import log_output_by_msg_id
 
 process_name = "LoginView"
 
@@ -63,26 +65,47 @@ class LoginView(FormView):
             # return super().form_valid(form) の代わりに、直接リダイレクトを返す
             return redirect(final_redirect_url)
 
-        except AuthenticationFailedException:
-            # ユーザーフレンドリーなエラーメッセージをフォームに付加
-            form.add_error(None, "メールアドレスまたはパスワードが正しくありません。")
-            return self.form_invalid(form)  # フォーム再表示
-
-        except AccountLockedException:
-            form.add_error(
-                None,
-                "このアカウントは現在利用できません。管理者にお問い合わせください。",
+        except AuthenticationFailedException as e:
+            # ログ出力: 認証失敗を記録
+            log_output_by_msg_id(
+                log_id="MSGE201",
+                params=[email, e.message_id, e.message],
+                logger_name=LOG_METHOD.APPLICATION.value,
             )
+            # 例外クラスで定義されたメッセージを使用
+            form.add_error(None, e.message)
             return self.form_invalid(form)  # フォーム再表示
 
-        except IntegrityError:
-            form.add_error(
-                None,
-                "システムエラーが発生しました。時間をおいて再度お試しください。",
+        except AccountLockedException as e:
+            # ログ出力: アカウントロックを記録
+            log_output_by_msg_id(
+                log_id="MSGE202",
+                params=[email, e.message_id],
+                logger_name=LOG_METHOD.APPLICATION.value,
             )
+            # 例外クラスで定義されたメッセージを使用
+            form.add_error(None, e.message)
             return self.form_invalid(form)  # フォーム再表示
 
-        except Exception:
-            # ログ記録推奨
+        except IntegrityError as e:
+            # ログ出力: データベース整合性エラーを記録
+            log_output_by_msg_id(
+                log_id="MSGE203",
+                params=[email, e.message_id, str(e.details)],
+                logger_name=LOG_METHOD.APPLICATION.value,
+            )
+            # 例外クラスで定義されたメッセージを使用
+            form.add_error(None, e.message)
+            return self.form_invalid(form)  # フォーム再表示
+
+        except Exception as e:
+            # ログ出力: 予期せぬエラーを記録（スタックトレースを含む）
+            error_detail = f"ログイン処理中にエラーが発生しました。メールアドレス: {email} エラー: {str(e)}"
+            log_output_by_msg_id(
+                log_id="MSGE002",
+                params=[error_detail],
+                logger_name=LOG_METHOD.APPLICATION.value,
+                exc_info=True,  # 予測不可能なエラーのためスタックトレースを含める
+            )
             form.add_error(None, "予期せぬエラーが発生しました。")
             return self.form_invalid(form)  # フォーム再表示

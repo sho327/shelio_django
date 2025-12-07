@@ -55,7 +55,9 @@ class AuthenticationFailedException(AccountError):
 class AccountLockedException(AccountError):
     """アカウントがロックまたは凍結されている場合"""
 
-    default_message = "このアカウントは現在利用できません。"
+    default_message = (
+        "このアカウントは現在利用できません。管理者にお問い合わせください。"
+    )
     message_id = "ERR_AUTH_002"
 
 

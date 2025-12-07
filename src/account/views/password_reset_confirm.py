@@ -6,7 +6,9 @@ from django.views.generic import FormView
 from account.exceptions import PasswordResetTokenInvalidException
 from account.forms.password_reset_confirm import PasswordResetConfirmForm
 from account.services.auth_service import AuthService
+from core.consts import LOG_METHOD
 from core.exceptions import IntegrityError
+from core.utils.log_helpers import log_output_by_msg_id
 
 
 # パスワードリセット確認＆実行ビュー(トークン検証とパスワード設定)
@@ -33,7 +35,7 @@ class PasswordResetConfirmView(FormView):
 
         try:
             # サービス層でトークン検証とパスワード更新を実行
-            auth_service.reset_password(self.token_value, new_password)
+            user = auth_service.reset_password(self.token_value, new_password)
 
             # 成功メッセージを設定し、ログイン画面へリダイレクト
             # messages.success(
@@ -42,41 +44,42 @@ class PasswordResetConfirmView(FormView):
             # )
             return super().form_valid(form)
 
-        except PasswordResetTokenInvalidException:
-            # トークンが無効または期限切れの場合
-            # messages.error(
-            #     self.request,
-            #     "このリセットリンクは無効か、または期限が切れています。お手数ですが、再度パスワードリセットを要求してください。",
-            # )
-            form.add_error(
-                None,
-                "このリセットリンクは無効か、または期限が切れています。お手数ですが、再度パスワードリセットを要求してください。",
+        except PasswordResetTokenInvalidException as e:
+            # ログ出力: トークン無効を記録
+            log_output_by_msg_id(
+                log_id="MSGE601",
+                params=[
+                    self.token_value[:8] + "...",
+                    e.message_id,
+                ],  # トークンの一部のみ記録（セキュリティのため）
+                logger_name=LOG_METHOD.APPLICATION.value,
             )
+            # 例外クラスで定義されたメッセージを使用
+            form.add_error(None, e.message)
 
             # エラー発生時はリセット要求画面に戻す
             return redirect(reverse("account:password_reset_request"))
 
-        except IntegrityError:  # ⭐ 追加で捕捉 ⭐
-            # messages.error(
-            #     self.request,
-            #     "システム処理中にエラーが発生しました。時間をおいて再度お試しください。",
-            # )
-            form.add_error(
-                None,
-                "システム処理中にエラーが発生しました。時間をおいて再度お試しください。",
+        except IntegrityError as e:
+            # ログ出力: データベース整合性エラーを記録
+            user_id = str(user.pk) if "user" in locals() else "unknown"
+            log_output_by_msg_id(
+                log_id="MSGE602",
+                params=[user_id, e.message_id, str(e.details)],
+                logger_name=LOG_METHOD.APPLICATION.value,
             )
+            # 例外クラスで定義されたメッセージを使用
+            form.add_error(None, e.message)
             return redirect(reverse("account:login"))  # またはエラー画面へリダイレクト
 
         except Exception as e:
-            # 予期せぬエラー (DBエラーなど)
-            # messages.error(
-            #     self.request,
-            #     "パスワードリセット中にシステムエラーが発生しました。時間をおいて再度お試しください。",
-            # )
-            # ログ記録推奨
-            form.add_error(
-                None,
-                "パスワードリセット中に予期せぬエラーが発生しました。時間をおいて再度お試しください。",
+            # ログ出力: 予期せぬエラーを記録（スタックトレースを含む）
+            error_detail = f"パスワードリセット実行処理中にエラーが発生しました。トークン: {self.token_value[:8]}... エラー: {str(e)}"
+            log_output_by_msg_id(
+                log_id="MSGE002",
+                params=[error_detail],
+                logger_name=LOG_METHOD.APPLICATION.value,
+                exc_info=True,  # 予測不可能なエラーのためスタックトレースを含める
             )
-            # log_output_by_msg_id(...)
+            form.add_error(None, "予期せぬエラーが発生しました。")
             return redirect(reverse("account:login"))  # 安全のためログイン画面に戻す

@@ -9,3 +9,4 @@ local_settings.py
 .DS_STORE
 .venv
 *.sqlite3
+media/

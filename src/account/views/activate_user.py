@@ -8,6 +8,8 @@ from account.exceptions import (
     UserAlreadyActiveException,
 )
 from account.services.auth_service import AuthService
+from core.consts import LOG_METHOD
+from core.utils.log_helpers import log_output_by_msg_id
 
 
 class ActivateUserView(View):
@@ -28,29 +30,55 @@ class ActivateUserView(View):
             # 成功画面へリダイレクト
             return redirect(reverse("dashboard:dashboard"))
 
-        except TokenExpiredOrNotFoundException:
-            # トークンが無効または期限切れの場合
+        except TokenExpiredOrNotFoundException as e:
+            # ログ出力: トークン無効を記録
+            log_output_by_msg_id(
+                log_id="MSGE401",
+                params=[
+                    token_value[:8] + "...",
+                    e.message_id,
+                ],  # トークンの一部のみ記録（セキュリティのため）
+                logger_name=LOG_METHOD.APPLICATION.value,
+            )
+            # 例外クラスで定義されたメッセージを使用
             context = {
                 "error_title": "無効なリンク",
-                "error_message": "このアクティベーションリンクは無効か、期限が切れています。",
+                "error_message": e.message,
                 "can_retry": True,
             }
             return render(
                 request, "account/activate_user_failed.html", context, status=400
             )
 
-        except UserAlreadyActiveException:
-            # 既に有効化済みの場合
+        except UserAlreadyActiveException as e:
+            # ログ出力: 既に有効化済みを記録
+            log_output_by_msg_id(
+                log_id="MSGE402",
+                params=[
+                    str(user.pk) if "user" in locals() else "unknown",
+                    e.message_id,
+                ],
+                logger_name=LOG_METHOD.APPLICATION.value,
+            )
+            # 例外クラスで定義されたメッセージを使用
             context = {
                 "message_title": "既に有効化済み",
-                "message_body": "このアカウントは既に有効化されています。ログインしてください。",
+                "message_body": e.message,
             }
             # 既にログイン済みの可能性もあるため、200 OK でメッセージを返す
             return render(
                 request, "account/activate_user_success.html", context, status=200
             )
 
-        except Exception:
+        except Exception as e:
+            # ログ出力: 予期せぬエラーを記録（スタックトレースを含む）
+            error_detail = f"アクティベーション処理中にエラーが発生しました。トークン: {token_value[:8]}... エラー: {str(e)}"
+            log_output_by_msg_id(
+                log_id="MSGE002",
+                params=[error_detail],
+                logger_name=LOG_METHOD.APPLICATION.value,
+                exc_info=True,  # 予測不可能なエラーのためスタックトレースを含める
+            )
             # その他のシステムエラー
             context = {
                 "error_title": "システムエラー",

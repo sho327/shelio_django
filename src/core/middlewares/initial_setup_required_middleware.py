@@ -9,7 +9,7 @@ EXEMPT_URL_NAMES = [
     "login",
     "logout",
     "account:initial_setup",  # 初回設定画面自体は必ず除外
-    # 'admin:index',         # 管理画面を除外する場合
+    "admin:index",  # 管理画面を除外する場合
 ]
 
 
