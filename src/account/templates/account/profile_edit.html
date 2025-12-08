@@ -55,7 +55,7 @@
 <div class="container mx-auto max-w-4xl" x-data="profileEditData()">
   <div class="mb-6">
     <h1 class="text-2xl font-bold">プロフィール編集</h1>
-    <a href="{% url 'account:profile' %}" class="link link-primary mt-2 inline-block text-sm">← プロフィールに戻る</a>
+    <a href="{% url 'account:profile' 'me' %}" class="link link-primary mt-2 inline-block text-sm">← プロフィールに戻る</a>
   </div>
 
   <div class="card bg-base-100 shadow-xl rounded-lg">
@@ -448,74 +448,11 @@
           </div>
         {% endwith %}
 
-        {# メール通知一括設定 #}
-        {% with field=form.is_email_notify_enabled %}
-          <div class="form-control mb-4">
-            <label class="label cursor-pointer p-0">
-              <span class="label-text">{{ field.label }}</span>
-              <input type="checkbox" 
-                  name="{{ field.name }}"
-                  id="{{ field.id_for_label }}"
-                  class="checkbox checkbox-sm checkbox-primary" 
-                  {% if field.value %}checked{% endif %} />
-            </label>
-            {% if field.help_text %}
-              <label class="label pt-0">
-                <span class="label-text-alt text-base-content/70">{{ field.help_text }}</span>
-              </label>
-            {% endif %}
-          </div>
-        {% endwith %}
-
-        {# 個別通知設定 #}
-        <div class="ml-4 mb-4">
-          <p class="text-sm font-semibold mb-2">個別通知設定</p>
-          
-          {% with field=form.is_notify_like %}
-            <div class="form-control mb-2">
-              <label class="label cursor-pointer p-0">
-                <span class="label-text text-sm">{{ field.label }}</span>
-                <input type="checkbox" 
-                    name="{{ field.name }}"
-                    id="{{ field.id_for_label }}"
-                    class="checkbox checkbox-sm checkbox-primary" 
-                    {% if field.value %}checked{% endif %} />
-              </label>
-            </div>
-          {% endwith %}
-
-          {% with field=form.is_notify_comment %}
-            <div class="form-control mb-2">
-              <label class="label cursor-pointer p-0">
-                <span class="label-text text-sm">{{ field.label }}</span>
-                <input type="checkbox" 
-                    name="{{ field.name }}"
-                    id="{{ field.id_for_label }}"
-                    class="checkbox checkbox-sm checkbox-primary" 
-                    {% if field.value %}checked{% endif %} />
-              </label>
-            </div>
-          {% endwith %}
-
-          {% with field=form.is_notify_follow %}
-            <div class="form-control mb-2">
-              <label class="label cursor-pointer p-0">
-                <span class="label-text text-sm">{{ field.label }}</span>
-                <input type="checkbox" 
-                    name="{{ field.name }}"
-                    id="{{ field.id_for_label }}"
-                    class="checkbox checkbox-sm checkbox-primary" 
-                    {% if field.value %}checked{% endif %} />
-              </label>
-            </div>
-          {% endwith %}
-        </div>
-
         {# 送信ボタン #}
         <div class="form-control mt-6">
           <div class="flex gap-4">
             <button type="submit" class="btn btn-primary flex-1">更新する</button>
-            <a href="{% url 'account:profile' %}" class="btn btn-outline">キャンセル</a>
+            <a href="{% url 'account:profile' 'me' %}" class="btn btn-outline">キャンセル</a>
           </div>
         </div>
       </form>

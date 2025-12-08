@@ -1,0 +1,117 @@
+{% extends "core/base.html" %}
+{% load static %}
+
+{% block title %}設定 - {{ SITE_NAME }}{% endblock %}
+
+{% block content %}
+
+<div class="container mx-auto max-w-4xl">
+  <div class="mb-6">
+    <h1 class="text-2xl font-bold">設定</h1>
+    <a href="{% url 'account:profile' 'me' %}" class="link link-primary mt-2 inline-block text-sm">← プロフィールに戻る</a>
+  </div>
+
+  <div class="card bg-base-100 shadow-xl rounded-lg">
+    <div class="card-body">
+      <h2 class="card-title text-xl mb-4">通知設定</h2>
+
+      <form method="post" class="space-y-6">
+        {% csrf_token %}
+
+        {# エラーメッセージ #}
+        {% if form.errors %}
+          <div class="alert alert-error">
+            <svg xmlns="http://www.w3.org/2000/svg" class="stroke-current shrink-0 h-6 w-6" fill="none" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+            <span>入力内容にエラーがあります。</span>
+          </div>
+        {% endif %}
+
+        {# メール通知一括設定 #}
+        <div class="form-control">
+          <label class="label cursor-pointer justify-start gap-4 p-0">
+            <input type="checkbox" 
+                   name="is_email_notify_enabled" 
+                   id="id_is_email_notify_enabled"
+                   class="checkbox checkbox-sm checkbox-primary" 
+                   {% if form.is_email_notify_enabled.value %}checked{% endif %} />
+            <div>
+              <span class="label-text font-semibold">{{ form.is_email_notify_enabled.label }}</span>
+              <p class="text-sm text-base-content/60 mt-1">すべてのメール通知の有効/無効を一括で設定します</p>
+            </div>
+          </label>
+          {% if form.is_email_notify_enabled.errors %}
+            <label class="label"><span class="label-text-alt text-error">{{ form.is_email_notify_enabled.errors.0 }}</span></label>
+          {% endif %}
+        </div>
+
+        <div class="divider"></div>
+
+        {# 個別の通知設定 #}
+        <div class="space-y-4">
+          <h3 class="font-semibold text-lg">個別通知設定</h3>
+
+          <div class="form-control">
+            <label class="label cursor-pointer justify-start gap-4 p-0">
+              <input type="checkbox" 
+                     name="is_notify_like" 
+                     id="id_is_notify_like"
+                     class="checkbox checkbox-sm checkbox-primary" 
+                     {% if form.is_notify_like.value %}checked{% endif %} />
+              <div>
+                <span class="label-text">{{ form.is_notify_like.label }}</span>
+                <p class="text-sm text-base-content/60">{{ form.is_notify_like.help_text }}</p>
+              </div>
+            </label>
+            {% if form.is_notify_like.errors %}
+              <label class="label"><span class="label-text-alt text-error">{{ form.is_notify_like.errors.0 }}</span></label>
+            {% endif %}
+          </div>
+
+          <div class="form-control">
+            <label class="label cursor-pointer justify-start gap-4 p-0">
+              <input type="checkbox" 
+                     name="is_notify_comment" 
+                     id="id_is_notify_comment"
+                     class="checkbox checkbox-sm checkbox-primary" 
+                     {% if form.is_notify_comment.value %}checked{% endif %} />
+              <div>
+                <span class="label-text">{{ form.is_notify_comment.label }}</span>
+                <p class="text-sm text-base-content/60">{{ form.is_notify_comment.help_text }}</p>
+              </div>
+            </label>
+            {% if form.is_notify_comment.errors %}
+              <label class="label"><span class="label-text-alt text-error">{{ form.is_notify_comment.errors.0 }}</span></label>
+            {% endif %}
+          </div>
+
+          <div class="form-control">
+            <label class="label cursor-pointer justify-start gap-4 p-0">
+              <input type="checkbox" 
+                     name="is_notify_follow" 
+                     id="id_is_notify_follow"
+                     class="checkbox checkbox-sm checkbox-primary" 
+                     {% if form.is_notify_follow.value %}checked{% endif %} />
+              <div>
+                <span class="label-text">{{ form.is_notify_follow.label }}</span>
+                <p class="text-sm text-base-content/60">{{ form.is_notify_follow.help_text }}</p>
+              </div>
+            </label>
+            {% if form.is_notify_follow.errors %}
+              <label class="label"><span class="label-text-alt text-error">{{ form.is_notify_follow.errors.0 }}</span></label>
+            {% endif %}
+          </div>
+        </div>
+
+        <div class="divider"></div>
+
+        {# 送信ボタン #}
+        <div class="card-actions justify-end">
+          <a href="{% url 'account:profile' 'me' %}" class="btn btn-ghost">キャンセル</a>
+          <button type="submit" class="btn btn-primary">保存</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+{% endblock %}

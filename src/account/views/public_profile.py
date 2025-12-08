@@ -15,7 +15,7 @@ process_name = "PublicProfileView"
 
 class PublicProfileView(LoginRequiredMixin, DetailView):
     """
-    公開プロフィール詳細画面
+    公開プロフィール詳細画面（自分/他人共通）
     """
 
     model = M_UserProfile
@@ -25,7 +25,13 @@ class PublicProfileView(LoginRequiredMixin, DetailView):
     @logging_sql_queries(process_name=process_name)
     def get_object(self, queryset=None):
         service = UserService()
-        profile_id = self.kwargs.get("pk")
+        
+        # 'me' の場合は自分のプロフィールを取得
+        pk = self.kwargs.get("pk")
+        if pk == "me":
+            profile_id = self.request.user.pk
+        else:
+            profile_id = int(pk)
 
         try:
             profile = service.get_public_profile(
@@ -66,5 +72,8 @@ class PublicProfileView(LoginRequiredMixin, DetailView):
 
         # サービス層を使用してスキルタグをパース
         context["skill_tags"] = service.parse_skill_tags(profile)
+        
+        # 自分のプロフィールかどうかを判定
+        context["is_own_profile"] = profile.m_user == self.request.user
 
         return context

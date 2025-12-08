@@ -8,8 +8,10 @@ from django.db import transaction
 from django.db.models import QuerySet
 
 from account.models.m_user_profile import M_UserProfile
+from account.models.m_user_settings import M_UserSettings
 from account.repositories.m_user_profile_repository import M_UserProfileRepository
 from account.repositories.m_user_repository import M_UserRepository
+from account.repositories.m_user_settings_repository import M_UserSettingsRepository
 from account.repositories.t_user_token_repository import T_UserTokenRepository
 from account.exceptions import ProfileNotFoundException, ProfileAccessDeniedException
 from core.consts import LOG_METHOD
@@ -31,6 +33,7 @@ class UserService:
         # 必要なRepositoryを依存性注入
         self.user_repo = M_UserRepository()
         self.profile_repo = M_UserProfileRepository()
+        self.settings_repo = M_UserSettingsRepository()
         self.token_repo = T_UserTokenRepository()
         self.storage_service = StorageService()
 
@@ -98,11 +101,6 @@ class UserService:
             update_data = {
                 "display_name": display_name,
                 "is_public": is_public,
-                "is_email_notify_enabled": is_email_notify_enabled,
-                # 個別通知フラグ名もモデルに合わせる
-                "is_notify_like": is_email_notify_enabled,
-                "is_notify_comment": is_email_notify_enabled,
-                "is_notify_follow": is_email_notify_enabled,
                 "updated_by": user,
                 "updated_method": process_name,
             }
@@ -116,7 +114,34 @@ class UserService:
             # 4. UserProfileの更新実行
             self.profile_repo.update(profile, **update_data)
 
-            # 5. is_first_loginフラグの更新
+            # 5. UserSettingsの作成または更新
+            setting = self.settings_repo.get_alive_by_pk(user.pk)
+            if setting is None:
+                # 設定が存在しない場合は作成
+                self.settings_repo.create(
+                    m_user=user,
+                    is_email_notify_enabled=is_email_notify_enabled,
+                    is_notify_like=is_email_notify_enabled,
+                    is_notify_comment=is_email_notify_enabled,
+                    is_notify_follow=is_email_notify_enabled,
+                    created_by=user,
+                    updated_by=user,
+                    created_method=process_name,
+                    updated_method=process_name,
+                )
+            else:
+                # 既に存在する場合は更新
+                self.settings_repo.update(
+                    setting,
+                    is_email_notify_enabled=is_email_notify_enabled,
+                    is_notify_like=is_email_notify_enabled,
+                    is_notify_comment=is_email_notify_enabled,
+                    is_notify_follow=is_email_notify_enabled,
+                    updated_by=user,
+                    updated_method=process_name,
+                )
+
+            # 6. is_first_loginフラグの更新
             if user.is_first_login:
                 updated_user = self.user_repo.update(
                     user,
@@ -160,10 +185,6 @@ class UserService:
         x_link: Optional[str] = None,
         portfolio_blog_link: Optional[str] = None,
         is_public: Optional[bool] = None,
-        is_email_notify_enabled: Optional[bool] = None,
-        is_notify_like: Optional[bool] = None,
-        is_notify_comment: Optional[bool] = None,
-        is_notify_follow: Optional[bool] = None,
         icon_file: Optional[UploadedFile] = None,
         icon_clear: bool = False,
         theme: Optional[str] = None,
@@ -210,14 +231,6 @@ class UserService:
                 update_data["portfolio_blog_link"] = portfolio_blog_link
             if is_public is not None:
                 update_data["is_public"] = is_public
-            if is_email_notify_enabled is not None:
-                update_data["is_email_notify_enabled"] = is_email_notify_enabled
-            if is_notify_like is not None:
-                update_data["is_notify_like"] = is_notify_like
-            if is_notify_comment is not None:
-                update_data["is_notify_comment"] = is_notify_comment
-            if is_notify_follow is not None:
-                update_data["is_notify_follow"] = is_notify_follow
             if theme is not None:
                 update_data["theme"] = theme
 
@@ -341,3 +354,118 @@ class UserService:
             return []
 
         return [tag.strip() for tag in profile.skill_tags_raw.split(",") if tag.strip()]
+
+    # ------------------------------------------------------------------
+    # ユーザー設定
+    # ------------------------------------------------------------------
+    def get_user_setting(self, user: User) -> M_UserSettings:
+        """
+        ユーザー設定を取得する
+
+        Args:
+            user: ユーザーインスタンス
+
+        Returns:
+            ユーザー設定
+
+        Raises:
+            IntegrityError: 設定が存在しない場合または取得に失敗した場合
+        """
+        try:
+            setting = self.settings_repo.get_alive_by_pk(user.pk)
+            
+            if setting is None:
+                raise IntegrityError(
+                    message="ユーザー設定が見つかりません。",
+                    details={"user_id": str(user.pk)}
+                )
+            
+            return setting
+            
+        except IntegrityError:
+            raise
+        except Exception as e:
+            raise IntegrityError(
+                message="ユーザー設定の取得中にエラーが発生しました。",
+                details={
+                    "internal_message": str(e),
+                    "error_type": type(e).__name__,
+                    "user_id": str(user.pk),
+                },
+            )
+
+    @transaction.atomic
+    def update_user_setting(
+        self,
+        user: User,
+        process_name: str,
+        is_email_notify_enabled: Optional[bool] = None,
+        is_notify_like: Optional[bool] = None,
+        is_notify_comment: Optional[bool] = None,
+        is_notify_follow: Optional[bool] = None,
+    ) -> M_UserSettings:
+        """
+        ユーザー設定を更新する
+
+        Args:
+            user: ユーザーインスタンス
+            process_name: 処理名
+            is_email_notify_enabled: メール通知一括設定
+            is_notify_like: いいね通知設定
+            is_notify_comment: コメント通知設定
+            is_notify_follow: フォロー通知設定
+
+        Returns:
+            更新されたユーザー設定
+
+        Raises:
+            IntegrityError: 更新に失敗した場合
+        """
+        try:
+            # 設定の取得または作成
+            setting = self.settings_repo.get_alive_by_pk(user.pk)
+            
+            if setting is None:
+                # 設定が存在しない場合は作成
+                setting = self.settings_repo.create(
+                    m_user=user,
+                    is_email_notify_enabled=is_email_notify_enabled if is_email_notify_enabled is not None else True,
+                    is_notify_like=is_notify_like if is_notify_like is not None else True,
+                    is_notify_comment=is_notify_comment if is_notify_comment is not None else True,
+                    is_notify_follow=is_notify_follow if is_notify_follow is not None else True,
+                    created_by=user,
+                    updated_by=user,
+                    created_method=process_name,
+                    updated_method=process_name,
+                )
+            else:
+                # 設定が存在する場合は更新
+                update_data = {
+                    "updated_by": user,
+                    "updated_method": process_name,
+                }
+                if is_email_notify_enabled is not None:
+                    update_data["is_email_notify_enabled"] = is_email_notify_enabled
+                if is_notify_like is not None:
+                    update_data["is_notify_like"] = is_notify_like
+                if is_notify_comment is not None:
+                    update_data["is_notify_comment"] = is_notify_comment
+                if is_notify_follow is not None:
+                    update_data["is_notify_follow"] = is_notify_follow
+                
+                if update_data:
+                    setting = self.settings_repo.update(setting, **update_data)
+            
+            return setting
+            
+        except Exception as e:
+            raise IntegrityError(
+                message="ユーザー設定の更新中にエラーが発生しました。",
+                details={
+                    "internal_message": str(e),
+                    "error_type": type(e).__name__,
+                    "user_id": str(user.pk),
+                },
+            )
+
+

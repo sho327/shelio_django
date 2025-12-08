@@ -21,7 +21,7 @@ class ProfileEditView(LoginRequiredMixin, FormView):
 
     template_name = "account/profile_edit.html"
     form_class = ProfileEditForm
-    success_url = reverse_lazy("account:profile")
+    success_url = reverse_lazy("account:profile", kwargs={"pk": "me"})
 
     # SQLログデコレータを適用
     @logging_sql_queries(process_name=process_name)
@@ -47,10 +47,6 @@ class ProfileEditView(LoginRequiredMixin, FormView):
                 initial["x_link"] = profile.x_link
                 initial["portfolio_blog_link"] = profile.portfolio_blog_link
                 initial["is_public"] = profile.is_public
-                initial["is_email_notify_enabled"] = profile.is_email_notify_enabled
-                initial["is_notify_like"] = profile.is_notify_like
-                initial["is_notify_comment"] = profile.is_notify_comment
-                initial["is_notify_follow"] = profile.is_notify_follow
             except ProfileNotFoundException as e:
                 # ログ出力: プロフィール未作成エラーを記録
                 log_output_by_msg_id(
@@ -118,10 +114,6 @@ class ProfileEditView(LoginRequiredMixin, FormView):
                 x_link=data.get("x_link") or None,
                 portfolio_blog_link=data.get("portfolio_blog_link") or None,
                 is_public=data.get("is_public"),
-                is_email_notify_enabled=data.get("is_email_notify_enabled"),
-                is_notify_like=data.get("is_notify_like"),
-                is_notify_comment=data.get("is_notify_comment"),
-                is_notify_follow=data.get("is_notify_follow"),
                 icon_file=icon_file,
                 icon_clear=data.get("icon_clear", False),
                 theme=data.get("theme"),

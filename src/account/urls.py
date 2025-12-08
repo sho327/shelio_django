@@ -7,12 +7,12 @@ from account.views.logout import LogoutView
 from account.views.password_reset_confirm import PasswordResetConfirmView
 from account.views.password_reset_pending import PasswordResetPendingView
 from account.views.password_reset_request import PasswordResetRequestView
-from account.views.profile import ProfileView
 from account.views.profile_edit import ProfileEditView
 from account.views.public_profile import PublicProfileView
 from account.views.register import RegisterView
 from account.views.register_pending import RegisterPendingView
 from account.views.user_search import UserSearchView
+from account.views.user_settings import UserSettingsView
 
 # app_nameを設定すると reverse_lazy("account:register_pending") が動作します
 app_name = "account"
@@ -48,8 +48,13 @@ urlpatterns = [
         InitialSetupView.as_view(),
         name="initial_setup",
     ),
-    path("profile/", ProfileView.as_view(), name="profile"),
+    # プロフィール関連（統一）
+    # 注意: profile/edit/ を profile/<str:pk>/ より先に定義
     path("profile/edit/", ProfileEditView.as_view(), name="profile_edit"),
+    path("profile/<str:pk>/", PublicProfileView.as_view(), name="profile"),  # 'me' または数値ID
+    path("settings/", UserSettingsView.as_view(), name="settings"),
+    # 検索
     path("search/", UserSearchView.as_view(), name="user_search"),
+    # 後方互換性のため残す（将来的に削除予定）
     path("users/<int:pk>/", PublicProfileView.as_view(), name="public_profile"),
 ]

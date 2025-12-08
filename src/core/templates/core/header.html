@@ -70,7 +70,7 @@
 		</button>
 		<ul x-cloak x-show="open" @click.outside="open=false" class="absolute top-10 right-0 mt-1 dropdown-content menu p-2 shadow bg-base-100 rounded-box w-52 z-50">
 		  <li>
-			<a href="{% url 'account:profile' %}"
+			<a href="{% url 'account:profile' 'me' %}"
 			   :class="{
 				   'focus:bg-neutral focus:text-neutral-content': activeTheme === 'business',
 				   'text-base-content hover:bg-primary/10 focus:!bg-primary/10 active:!bg-primary/10 focus-visible:!bg-primary/10 focus:!text-primary active:!text-primary': activeTheme !== 'business'
@@ -78,14 +78,15 @@
 			   プロフィール
 			</a>
 		  </li>
-		  <!-- <li>
-			<a :class="{
+		  <li>
+			<a href="{% url 'account:settings' %}"
+			   :class="{
 				   'focus:bg-neutral focus:text-neutral-content': activeTheme === 'business',
 				   'text-base-content hover:bg-primary/10 focus:!bg-primary/10 active:!bg-primary/10 focus-visible:!bg-primary/10 focus:!text-primary active:!text-primary': activeTheme !== 'business'
 			   }">
 			   設定
 			</a>
-		  </li> -->
+		  </li>
 		  <li>
 			<a :class="{
 				   'focus:bg-neutral focus:text-neutral-content': activeTheme === 'business',

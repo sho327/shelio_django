@@ -108,6 +108,7 @@ class M_UserProfile(BaseModel):
         blank=True,
     )
 
+
     # --- 4. フラグと設定 ---
     is_public = models.BooleanField(
         db_column="is_public",
@@ -117,36 +118,6 @@ class M_UserProfile(BaseModel):
         default=True,
     )
 
-    # メール通知設定 (notifyで統一)
-    is_email_notify_enabled = models.BooleanField(
-        db_column="is_email_notify_enabled",
-        verbose_name="メール通知一括設定フラグ",
-        db_comment="メール通知一括設定フラグ",
-        db_default=True,
-        default=True,
-    )
-    # 個別の通知設定
-    is_notify_like = models.BooleanField(
-        db_column="is_notify_like",
-        verbose_name="通知:いいね設定フラグ",
-        db_comment="通知:作品に「いいね」がついた時のメール設定フラグ",
-        db_default=True,
-        default=True,
-    )
-    is_notify_comment = models.BooleanField(
-        db_column="is_notify_comment",
-        verbose_name="通知:コメント設定フラグ",
-        db_comment="通知:コメントや返信が来た時のメール設定フラグ",
-        db_default=True,
-        default=True,
-    )
-    is_notify_follow = models.BooleanField(
-        db_column="is_notify_follow",
-        verbose_name="通知:フォロー設定フラグ",
-        db_comment="通知:誰かにフォローされた時のメール設定フラグ",
-        db_default=True,
-        default=True,
-    )
     # --- 各テーブル共通(AbstractBaseModelは列順が変わってしまうので使用しない) ---
     created_by = models.ForeignKey(
         settings.AUTH_USER_MODEL,  # M_Userモデルを参照

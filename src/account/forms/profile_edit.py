@@ -97,30 +97,6 @@ class ProfileEditForm(forms.Form):
         help_text="チェックを外すと、プロフィールはログインユーザーにのみ表示されます。",
     )
 
-    is_email_notify_enabled = forms.BooleanField(
-        label="メール通知を一括で受け取る",
-        required=False,
-        help_text="すべてのメール通知の有効/無効を一括で設定します。",
-    )
-
-    is_notify_like = forms.BooleanField(
-        label="いいね通知を受け取る",
-        required=False,
-        help_text="作品に「いいね」がついた時のメール通知を受け取ります。",
-    )
-
-    is_notify_comment = forms.BooleanField(
-        label="コメント通知を受け取る",
-        required=False,
-        help_text="コメントや返信が来た時のメール通知を受け取ります。",
-    )
-
-    is_notify_follow = forms.BooleanField(
-        label="フォロー通知を受け取る",
-        required=False,
-        help_text="誰かにフォローされた時のメール通知を受け取ります。",
-    )
-
     # -------------------------------------------------------------
     # 初期値設定用のフック (ビューで利用)
     # -------------------------------------------------------------
